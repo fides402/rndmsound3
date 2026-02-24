@@ -5,10 +5,7 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   base: './',
-  plugins: [
-    tailwindcss(),
-    react()
-  ],
+  plugins: [tailwindcss(), react()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, '.'),
@@ -16,6 +13,9 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: false
+    sourcemap: false,
+    rollupOptions: {
+      external: ['better-sqlite3']
+    }
   }
 });
