@@ -73,7 +73,9 @@ async function startServer() {
 
       const maxItems = Math.min(totalItems, 10000);
       let attempts = 0;
-      const MAX_ATTEMPTS = 10;
+      const MAX_ATTEMPTS = 5;
+
+      const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
       while (attempts < MAX_ATTEMPTS) {
         attempts++;
@@ -91,38 +93,32 @@ async function startServer() {
           
           const fullRelease = detailsResponse.data;
           
-          // Try to find a YouTube playlist first
-          const artist = fullRelease.artists?.[0]?.name || "";
-          const title = fullRelease.title || "";
-          const query = `${artist} - ${title}`;
-          
           let youtubeData = null;
 
-          // 1. Search for a playlist
-          const playlist = await searchYouTube(query, 'playlist');
-          if (playlist) {
-            youtubeData = { type: 'playlist', id: playlist.id.playlistId };
-          } else {
-            // 2. If no playlist, check Discogs videos
-            if (fullRelease.videos && fullRelease.videos.length > 0) {
-               // Extract IDs from Discogs videos
-               const videoIds = fullRelease.videos.map((v: any) => {
-                 // Handle standard watch URLs and short URLs
-                 const match = v.uri.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})(?:&|\?|$)/);
-                 return match ? match[1] : null;
-               }).filter(Boolean);
-               
-               if (videoIds.length > 0) {
-                 youtubeData = { type: 'videos', ids: videoIds };
-               }
-            }
+          // 1. Check Discogs videos first (No API quota cost)
+          if (fullRelease.videos && fullRelease.videos.length > 0) {
+             // Extract IDs from Discogs videos
+             const videoIds = fullRelease.videos.map((v: any) => {
+               // Handle standard watch URLs and short URLs
+               const match = v.uri.match(/(?:v=|\/)([a-zA-Z0-9_-]{11})(?:&|\?|$)/);
+               return match ? match[1] : null;
+             }).filter(Boolean);
+             
+             if (videoIds.length > 0) {
+               youtubeData = { type: 'videos', ids: videoIds };
+             }
+          }
+
+          // 2. If no videos in Discogs data, search YouTube (Costs API quota)
+          if (!youtubeData) {
+            const artist = fullRelease.artists?.[0]?.name || "";
+            const title = fullRelease.title || "";
+            const query = `${artist} - ${title}`;
             
-            // 3. If still no videos, search for the first track or album video
-            if (!youtubeData) {
-               const video = await searchYouTube(query, 'video');
-               if (video) {
-                 youtubeData = { type: 'videos', ids: [video.id.videoId] };
-               }
+            // Search for a video
+            const video = await searchYouTube(query, 'video');
+            if (video) {
+              youtubeData = { type: 'videos', ids: [video.id.videoId] };
             }
           }
 
@@ -131,6 +127,9 @@ async function startServer() {
             return res.json({ ...fullRelease, youtube: youtubeData });
           }
         }
+        
+        // Wait 1s before next attempt to respect Discogs rate limits
+        await sleep(1000);
       }
 
       res.status(404).json({ error: "Could not find a release with YouTube links after several attempts. Try different filters." });
