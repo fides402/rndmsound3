@@ -34,9 +34,9 @@ jobs:
       - name: Build Web App
         run: npm run build
         env:
-          VITE_API_BASE_URL: ${{ secrets.NETLIFY_SITE_URL }}
-          VITE_DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
-          VITE_YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          VITE_API_BASE_URL: 'https://rndmsound3.netlify.app'
+          VITE_DISCOGS_TOKEN: 'fvYYQHvhAEHVshXGPHYtbAWSlTUNQpnNJcBBbYCB'
+          VITE_YOUTUBE_API_KEY: 'AIzaSyBEYhVFn2QDsumv32BjOBVg89OpUYRzWTk'
 
       - name: Remove incomplete android folder and regenerate
         run: |
