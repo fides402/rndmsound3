@@ -36,11 +36,10 @@ jobs:
         env:
           VITE_API_BASE_URL: ${{ secrets.NETLIFY_SITE_URL }}
 
-      - name: Initialize Capacitor android folder if missing
+      - name: Remove incomplete android folder and regenerate
         run: |
-          if [ ! -d "android" ]; then
-            npx cap add android
-          fi
+          rm -rf android
+          npx cap add android
 
       - name: Sync Capacitor Android Project
         run: npx cap sync android
