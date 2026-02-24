@@ -1,0 +1,8 @@
+{
+	"appId": "com.fides402.rndmsound3",
+	"appName": "Random Sound",
+	"webDir": "dist",
+	"server": {
+		"androidScheme": "https"
+	}
+}
