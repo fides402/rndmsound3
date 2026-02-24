@@ -35,6 +35,8 @@ jobs:
         run: npm run build
         env:
           VITE_API_BASE_URL: ${{ secrets.NETLIFY_SITE_URL }}
+          VITE_DISCOGS_TOKEN: ${{ secrets.DISCOGS_TOKEN }}
+          VITE_YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
 
       - name: Remove incomplete android folder and regenerate
         run: |
