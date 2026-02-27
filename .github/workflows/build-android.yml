@@ -24,24 +24,8 @@ jobs:
       - name: Build web app
         run: npm run build
       
-      - name: Install Capacitor
-        run: npm install @capacitor/core @capacitor/cli @capacitor/android
-      
-      - name: Create Capacitor config
-        run: |
-          cat > capacitor.config.json << EOF
-          {
-            "appId": "com.rndmsound.app",
-            "appName": "Random Sound",
-            "webDir": "dist",
-            "server": {
-              "androidScheme": "https"
-            }
-          }
-          EOF
-      
-      - name: Add Android platform
-        run: npx cap add android
+      - name: Sync web to Android
+        run: npx cap sync android
       
       - name: Setup Java
         uses: actions/setup-java@v4
