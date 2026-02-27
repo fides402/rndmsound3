@@ -1,0 +1,8 @@
+{
+  "appId": "com.rndmsound.app",
+  "appName": "Random Sound",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  }
+}
