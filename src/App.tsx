@@ -43,6 +43,8 @@ interface Release {
   };
 }
 
+const DISCOGS_TOKEN = "ZVQpZIZeFkvNaxSKslHgiAEhhwpvwSfXKLJQiXGA";
+
 export default function App() {
   const [loading, setLoading] = useState(false);
   const [release, setRelease] = useState<Release | null>(null);
@@ -63,13 +65,48 @@ export default function App() {
       if (decade) params.append('year', decade);
       if (country) params.append('country', country);
 
-      const response = await fetch(`/api/random-release?${params.toString()}`);
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || "Failed to fetch release");
+      const searchParams = new URLSearchParams({
+        token: DISCOGS_TOKEN,
+        type: 'release', 
+        format: 'album',
+        per_page: '1'
+      });
+
+      if (genre) searchParams.append('genre', genre);
+      if (style) searchParams.append('style', style);
+      if (country) searchParams.append('country', country);
+      if (decade) searchParams.append('year', decade);
+
+      const searchUrl = "https://api.discogs.com/database/search?" + searchParams.toString();
+      const resp1 = await fetch(searchUrl, { headers: { 'User-Agent': 'RandomSound/1.0' } });
+      if (!resp1.ok) throw new Error('Discogs search failed');
+      
+      const data1 = await resp1.json();
+      if (!data1.pagination?.items) throw new Error('No results');
+      
+      const page = Math.floor(Math.random() * Math.min(data1.pagination.items, 1000)) + 1;
+      const resp2 = await fetch(searchUrl + "&page=" + page, { headers: { 'User-Agent': 'RandomSound/1.0' } });
+      const data2 = await resp2.json();
+      const result = data2.results?.[0];
+      if (!result?.id) throw new Error('No release found');
+      
+      const resp3 = await fetch("https://api.discogs.com/releases/" + result.id + "?token=" + DISCOGS_TOKEN, 
+        { headers: { 'User-Agent': 'RandomSound/1.0' } });
+      const release = await resp3.json();
+      
+      let youtubeData = null;
+      if (release.videos?.length) {
+        const ids = [];
+        for (const v of release.videos) {
+          const m = v.uri.match(/(?:v=\/)([a-zA-Z0-9_-]{11})/);
+          if (m) ids.push(m[1]);
+        }
+        if (ids.length) youtubeData = { type: 'videos', ids };
       }
-      const data = await response.json();
-      setRelease(data);
+      
+      if (!youtubeData) throw new Error('No YouTube video found');
+      
+      setRelease({ ...release, youtube: youtubeData });
     } catch (err: any) {
       setError(err.message);
     } finally {
