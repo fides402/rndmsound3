@@ -79,16 +79,15 @@ export default function App() {
 
   const getIntentUrl = (youtube: Release['youtube']) => {
     if (!youtube) return null;
-    
-    // Open in YouTube app
+
     if (youtube.type === 'playlist' && youtube.id) {
-      return 'vnd.youtube://playlist/' + youtube.id;
+      return `intent://www.youtube.com/playlist?list=${youtube.id}#Intent;scheme=http;action=android.intent.action.VIEW;end`;
     }
 
     if (youtube.type === 'videos' && youtube.ids && youtube.ids.length > 0) {
-      return 'vnd.youtube://' + youtube.ids[0];
+      return `intent://www.youtube.com/watch?v=${youtube.ids[0]}#Intent;scheme=http;action=android.intent.action.VIEW;end`;
     }
-    
+
     return null;
   };
 
