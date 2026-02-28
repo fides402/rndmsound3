@@ -1,20 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  Music, 
-  Shuffle, 
-  ExternalLink, 
-  Calendar, 
-  Tag, 
-  Disc, 
-  ChevronDown, 
-  Play, 
-  Info,
+import {
+  Music,
+  Shuffle,
+  ExternalLink,
+  Calendar,
+  Disc,
+  ChevronDown,
+  Play,
   Loader2,
   Volume2,
   Globe,
-  Play,
-  Zap
+  Smartphone
 } from 'lucide-react';
 import { GENRES, STYLES, DECADES, COUNTRIES } from './constants';
 import { clsx, type ClassValue } from 'clsx';
