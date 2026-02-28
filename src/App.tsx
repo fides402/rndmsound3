@@ -65,37 +65,14 @@ export default function App() {
       if (decade) params.append("year", decade);
       if (country) params.append("country", country);
 
-      // Try server first, then fallback to direct API
-      try {
-        const response = await fetch(`/api/random-release?${params.toString()}`);
-        if (response.ok) {
-          const data = await response.json();
-          setRelease(data);
-          setLoading(false);
-          return;
-        }
-      } catch (e) { console.log("Server unavailable"); }
-
-      // Direct Discogs API fallback
-      const sp = new URLSearchParams({ token: DISCOGS_TOKEN, type: "release", format: "album", per_page: "15" });
-      if (genre) sp.append("genre", genre);
-      if (style) sp.append("style", style);
-      if (country) sp.append("country", country);
-      if (decade) sp.append("year", decade);
-
-      const url = "https://api.discogs.com/database/search?" + sp.toString();
-      const r1 = await fetch(url, { headers: { "User-Agent": "RandomSound/1.0" } });
-      const d1 = await r1.json();
-      
-      if (!d1.results?.length) throw new Error("No results");
-      
-      // Get random album from first page
-      const randomResult = d1.results[Math.floor(Math.random() * d1.results.length)];
-      const r2 = await fetch("https://api.discogs.com/releases/" + randomResult.id + "?token=" + DISCOGS_TOKEN, 
-        { headers: { "User-Agent": "RandomSound/1.0" } });
-      const release = await r2.json();
-      
-      setRelease(release);
+      // Call server API
+      const response = await fetch(`/api/random-release?${params.toString()}`);
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to fetch release");
+      }
+      const data = await response.json();
+      setRelease(data);
     } catch (err: any) {
       setError(err.message || "Error");
     } finally {
