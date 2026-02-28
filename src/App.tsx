@@ -206,8 +206,22 @@ export default function App() {
       {/* Result Area */}
       <div className="w-full max-w-5xl">
         <AnimatePresence mode="wait">
-          {error && (
+          {loading && (
             <motion.div
+              key="loading"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex flex-col items-center justify-center py-20 text-white/30"
+            >
+              <Loader2 className="w-10 h-10 animate-spin mb-4" />
+              <p className="text-sm font-medium italic">Searching for album with video...</p>
+            </motion.div>
+          )}
+
+          {!loading && error && (
+            <motion.div
+              key="error"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -231,7 +245,7 @@ export default function App() {
             </motion.div>
           )}
 
-          {release && !loading && (
+          {!loading && release && (
             <motion.div
               key={release.id}
               initial={{ opacity: 0, scale: 0.95 }}
@@ -386,8 +400,9 @@ export default function App() {
             </motion.div>
           )}
 
-          {!release && !loading && !error && (
-            <motion.div 
+          {!loading && !release && !error && (
+            <motion.div
+              key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="flex flex-col items-center justify-center py-20 text-white/20"
