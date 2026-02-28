@@ -13,7 +13,7 @@ import {
   Loader2,
   Volume2,
   Globe,
-  Smartphone,
+  Play,
   Zap
 } from 'lucide-react';
 import { GENRES, STYLES, DECADES, COUNTRIES } from './constants';
@@ -60,83 +60,59 @@ export default function App() {
     setError(null);
     try {
       const params = new URLSearchParams();
-      if (genre) params.append('genre', genre);
-      if (style) params.append('style', style);
-      if (decade) params.append('year', decade);
-      if (country) params.append('country', country);
+      if (genre) params.append("genre", genre);
+      if (style) params.append("style", style);
+      if (decade) params.append("year", decade);
+      if (country) params.append("country", country);
 
-      const searchParams = new URLSearchParams({
-        token: DISCOGS_TOKEN,
-        type: 'release', 
-        format: 'album',
-        per_page: '1'
-      });
-
-      if (genre) searchParams.append('genre', genre);
-      if (style) searchParams.append('style', style);
-      if (country) searchParams.append('country', country);
-      if (decade) searchParams.append('year', decade);
-
-      const searchUrl = "https://api.discogs.com/database/search?" + searchParams.toString();
-      const resp1 = await fetch(searchUrl, { headers: { 'User-Agent': 'RandomSound/1.0' } });
-      if (!resp1.ok) throw new Error('Discogs search failed');
-      
-      const data1 = await resp1.json();
-      if (!data1.pagination?.items) throw new Error('No results');
-      
-      const page = Math.floor(Math.random() * Math.min(data1.pagination.items, 1000)) + 1;
-      const resp2 = await fetch(searchUrl + "&page=" + page, { headers: { 'User-Agent': 'RandomSound/1.0' } });
-      const data2 = await resp2.json();
-      const result = data2.results?.[0];
-      if (!result?.id) throw new Error('No release found');
-      
-      const resp3 = await fetch("https://api.discogs.com/releases/" + result.id + "?token=" + DISCOGS_TOKEN, 
-        { headers: { 'User-Agent': 'RandomSound/1.0' } });
-      const release = await resp3.json();
-      
-      let youtubeData = null;
-      if (release.videos?.length) {
-        const ids = [];
-        for (const v of release.videos) {
-          const m = v.uri.match(/(?:v=\/)([a-zA-Z0-9_-]{11})/);
-          if (m) ids.push(m[1]);
+      // Try server first, then fallback to direct API
+      try {
+        const response = await fetch(`/api/random-release?${params.toString()}`);
+        if (response.ok) {
+          const data = await response.json();
+          setRelease(data);
+          setLoading(false);
+          return;
         }
-        if (ids.length) youtubeData = { type: 'videos', ids };
-      }
+      } catch (e) { console.log("Server unavailable"); }
+
+      // Direct Discogs API fallback
+      const sp = new URLSearchParams({ token: DISCOGS_TOKEN, type: "release", format: "album", per_page: "15" });
+      if (genre) sp.append("genre", genre);
+      if (style) sp.append("style", style);
+      if (country) sp.append("country", country);
+      if (decade) sp.append("year", decade);
+
+      const url = "https://api.discogs.com/database/search?" + sp.toString();
+      const r1 = await fetch(url, { headers: { "User-Agent": "RandomSound/1.0" } });
+      const d1 = await r1.json();
       
-      if (!youtubeData) throw new Error('No YouTube video found');
+      if (!d1.results?.length) throw new Error("No results");
       
-      setRelease({ ...release, youtube: youtubeData });
+      // Get random album from first page
+      const randomResult = d1.results[Math.floor(Math.random() * d1.results.length)];
+      const r2 = await fetch("https://api.discogs.com/releases/" + randomResult.id + "?token=" + DISCOGS_TOKEN, 
+        { headers: { "User-Agent": "RandomSound/1.0" } });
+      const release = await r2.json();
+      
+      setRelease(release);
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "Error");
     } finally {
       setLoading(false);
     }
   };
 
-  const getIntentUrl = (youtube: Release['youtube'], packageName?: string) => {
+  const getIntentUrl = (youtube: Release['youtube']) => {
     if (!youtube) return null;
     
-    // Base intent structure
-    const scheme = 'intent://';
-    let packageSuffix = '#Intent;scheme=http;action=android.intent.action.VIEW;';
-    
-    if (packageName) {
-      packageSuffix += `package=${packageName};`;
-    }
-    packageSuffix += 'end';
-
-    // Case 1: Existing Playlist ID
+    // Open in YouTube app
     if (youtube.type === 'playlist' && youtube.id) {
-      return `${scheme}www.youtube.com/playlist?list=${youtube.id}${packageSuffix}`;
+      return 'vnd.youtube://playlist/' + youtube.id;
     }
 
-    // Case 2: List of Video IDs (Ad-hoc playlist)
     if (youtube.type === 'videos' && youtube.ids && youtube.ids.length > 0) {
-      // Use the "watch_videos" endpoint which automatically creates an anonymous playlist
-      // This is more reliable for external apps than &playlist= param
-      const videoIds = youtube.ids.join(',');
-      return `${scheme}www.youtube.com/watch_videos?video_ids=${videoIds}${packageSuffix}`;
+      return 'vnd.youtube://' + youtube.ids[0];
     }
     
     return null;
@@ -427,7 +403,7 @@ export default function App() {
                       href={getIntentUrl(release.youtube)!} 
                       className="flex items-center gap-2 px-6 py-3 bg-white text-black border-2 border-[#FF0000] rounded-full text-sm font-bold hover:bg-[#FF0000] hover:text-white transition-all shadow-lg shadow-red-500/20"
                     >
-                      Open in App
+                      Open in YouTube
                       <Smartphone className="w-4 h-4" />
                     </a>
                   )}
