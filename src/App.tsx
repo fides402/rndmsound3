@@ -74,7 +74,7 @@ export default function App() {
       const data = await response.json();
       setRelease(data);
     } catch (err: any) {
-      setError(err.message || "Error");
+      setError(err.message || err.toString() || "Connection error");
     } finally {
       setLoading(false);
     }
